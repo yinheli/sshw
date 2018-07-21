@@ -78,11 +78,12 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 				for _, key := range strings.Split(input, " ") {
 					key = strings.TrimSpace(key)
 					if key != "" {
-						if strings.Contains(content, key) {
-							return true
+						if !strings.Contains(content, key) {
+							return false
 						}
 					}
 				}
+				return true
 			} else {
 				if strings.Contains(content, input) {
 					return true
