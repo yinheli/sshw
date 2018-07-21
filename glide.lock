@@ -1,0 +1,31 @@
+hash: f5eea8f026758d77125139819d0024c67e93cba1b00083202ef1e59ddc9a607d
+updated: 2018-07-21T13:02:44.870548+08:00
+imports:
+- name: github.com/chzyer/readline
+  version: 2972be24d48e78746da79ba8e24e8b488c9880de
+- name: github.com/go-yaml/yaml
+  version: 5420a8b6744d3b0345ab293f6fcba19c978f1183
+- name: github.com/juju/ansiterm
+  version: 720a0952cc2ac777afc295d9861263e2a4cf96a1
+  subpackages:
+  - tabwriter
+- name: github.com/lunixbochs/vtclean
+  version: 2d01aacdc34a083dca635ba869909f5fc0cd4f41
+- name: github.com/manifoldco/promptui
+  version: 3dd80c00b7cb0bc779d1c204da6f3ae0fa6a4eee
+  subpackages:
+  - list
+  - screenbuf
+- name: github.com/mattn/go-colorable
+  version: efa589957cd060542a26d2dd7832fd6a6c6c3ade
+- name: github.com/mattn/go-isatty
+  version: 6ca4dbf54d38eea1a992b3c722a76a5d1c4cb25c
+- name: golang.org/x/crypto
+  version: a2144134853fc9a27a7b1e3eb4f19f1a76df13c9
+  subpackages:
+  - ssh
+- name: golang.org/x/sys
+  version: ac767d655b305d4e9612f5f6e33120b9176c4ad4
+  subpackages:
+  - unix
+testImports: []
