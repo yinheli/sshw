@@ -153,6 +153,9 @@ func login(node *sshw.Node) {
 		Timeout:         time.Second * 10,
 	}
 
+	config.SetDefaults()
+	config.Ciphers = append(config.Ciphers, "aes128-cbc", "3des-cbc", "blowfish-cbc", "cast128-cbc", "aes192-cbc", "aes256-cbc")
+
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
 	if err != nil {
 		log.Error(err)
