@@ -70,7 +70,7 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 		Label:     "select host",
 		Items:     trees,
 		Templates: templates,
-		Size:      50,
+		Size:      20,
 		Searcher: func(input string, index int) bool {
 			node := trees[index]
 			content := fmt.Sprintf("%s %s %s", node.Name, node.User, node.Host)
