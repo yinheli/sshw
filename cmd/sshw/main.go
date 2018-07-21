@@ -159,7 +159,7 @@ func login(node *sshw.Node) {
 	}
 	defer client.Close()
 
-	log.Infof("connect server %s@%s port:%d, version: %s\n", username, host, port, string(client.ServerVersion()))
+	log.Infof("connect server ssh -p %d %s@%s password:%s  version: %s\n", port, username, host, node.Password, string(client.ServerVersion()))
 
 	session, err := client.NewSession()
 	defer session.Close()
