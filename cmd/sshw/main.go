@@ -166,11 +166,11 @@ func login(node *sshw.Node) {
 	log.Infof("connect server ssh -p %d %s@%s password:%s  version: %s\n", port, username, host, node.Password, string(client.ServerVersion()))
 
 	session, err := client.NewSession()
-	defer session.Close()
 	if err != nil {
 		log.Error(err)
 		return
 	}
+	defer session.Close()
 
 	fd := int(os.Stdin.Fd())
 	state, err := terminal.MakeRaw(fd)
