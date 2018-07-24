@@ -3,10 +3,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/manifoldco/promptui"
-	"github.com/yinheli/sshw"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -14,6 +10,11 @@ import (
 	"runtime"
 	"strings"
 	"time"
+
+	"github.com/manifoldco/promptui"
+	"github.com/yinheli/sshw"
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 const prev = "-parent-"
@@ -137,6 +138,15 @@ func login(node *sshw.Node) {
 	}
 
 	if node.Password != "" {
+		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
+			answers = make([]string, len(questions))
+			for n := range questions {
+				answers[n] = node.Password
+			}
+
+			return answers, nil
+		}
+		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
 		authMethods = append(authMethods, ssh.Password(node.Password))
 	}
 
