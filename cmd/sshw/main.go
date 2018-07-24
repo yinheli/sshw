@@ -123,7 +123,12 @@ func login(node *sshw.Node) {
 
 	var authMethods []ssh.AuthMethod
 
-	b, err := ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
+	var b []byte
+	if node.KeyPath == "" {
+		b, err = ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
+	} else {
+		b, err = ioutil.ReadFile(node.KeyPath)
+	}
 	if err == nil {
 		signer, err := ssh.ParsePrivateKey(b)
 		if err == nil {
