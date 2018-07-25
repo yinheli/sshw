@@ -3,11 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/manifoldco/promptui"
-	"github.com/yinheli/sshw"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/manifoldco/promptui"
+	"github.com/yinheli/sshw"
 )
 
 const prev = "-parent-"

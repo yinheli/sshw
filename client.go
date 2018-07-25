@@ -2,13 +2,14 @@ package sshw
 
 import (
 	"fmt"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
 	"time"
+
+	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/terminal"
 )
 
 type Client interface {
@@ -52,6 +53,15 @@ func NewClient(node *Node) Client {
 	password := node.password()
 
 	if password != nil {
+		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
+			answers = make([]string, len(questions))
+			for n := range questions {
+				answers[n] = node.Password
+			}
+
+			return answers, nil
+		}
+		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
 		authMethods = append(authMethods, password)
 	}
 
