@@ -23,6 +23,7 @@ config example:
 ```yaml
 - { name: dev server fully configured, user: appuser, host: 192.168.8.35, port: 22, password: 123456 }
 - { name: dev server with key path, user: appuser, host: 192.168.8.35, port: 22, keypath: /root/.ssh/id_rsa }
+- { name: dev server with passphrase key, user: appuser, host: 192.168.8.35, port: 22, keypath: /root/.ssh/id_rsa, passphrase: abcdefghijklmn}
 - { name: dev server without port, user: appuser, host: 192.168.8.35 }
 - { name: dev server without user, host: 192.168.8.35 }
 - { name: dev server without password, host: 192.168.8.35 }

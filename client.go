@@ -37,7 +37,13 @@ func NewClient(node *Node) Client {
 	}
 
 	if err == nil {
-		signer, err := ssh.ParsePrivateKey(pemBytes)
+		var signer ssh.Signer
+		var err error
+		if node.Passphrase != "" {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase(pemBytes, []byte(node.Passphrase))
+		} else {
+			signer, err = ssh.ParsePrivateKey(pemBytes)
+		}
 		if err == nil {
 			authMethods = append(authMethods, ssh.PublicKeys(signer))
 		}
