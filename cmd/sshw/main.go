@@ -3,18 +3,12 @@ package main
 import (
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
-	"os/user"
-	"path"
 	"runtime"
 	"strings"
-	"time"
 
 	"github.com/manifoldco/promptui"
 	"github.com/yinheli/sshw"
-	"golang.org/x/crypto/ssh"
-	"golang.org/x/crypto/ssh/terminal"
 )
 
 const prev = "-parent-"
@@ -63,7 +57,8 @@ func main() {
 		return
 	}
 
-	login(node)
+	client := sshw.NewClient(node)
+	client.Login()
 }
 
 func choose(parent, trees []*sshw.Node) *sshw.Node {
@@ -85,10 +80,9 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 					}
 				}
 				return true
-			} else {
-				if strings.Contains(content, input) {
-					return true
-				}
+			}
+			if strings.Contains(content, input) {
+				return true
 			}
 			return false
 		},
@@ -113,114 +107,4 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 	}
 
 	return node
-}
-
-func login(node *sshw.Node) {
-	u, err := user.Current()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	var authMethods []ssh.AuthMethod
-
-	var b []byte
-	if node.KeyPath == "" {
-		b, err = ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
-	} else {
-		b, err = ioutil.ReadFile(node.KeyPath)
-	}
-	if err == nil {
-		signer, err := ssh.ParsePrivateKey(b)
-		if err == nil {
-			authMethods = append(authMethods, ssh.PublicKeys(signer))
-		}
-	}
-
-	if node.Password != "" {
-		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
-			answers = make([]string, len(questions))
-			for n := range questions {
-				answers[n] = node.Password
-			}
-
-			return answers, nil
-		}
-		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
-		authMethods = append(authMethods, ssh.Password(node.Password))
-	}
-
-	username := node.User
-	host := node.Host
-	port := node.Port
-
-	if username == "" {
-		username = "root"
-	}
-	if port <= 0 {
-		port = 22
-	}
-
-	config := &ssh.ClientConfig{
-		User:            username,
-		Auth:            authMethods,
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-		Timeout:         time.Second * 10,
-	}
-
-	config.SetDefaults()
-	config.Ciphers = append(config.Ciphers, "aes128-cbc", "3des-cbc", "blowfish-cbc", "cast128-cbc", "aes192-cbc", "aes256-cbc")
-
-	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), config)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer client.Close()
-
-	log.Infof("connect server ssh -p %d %s@%s password:%s  version: %s\n", port, username, host, node.Password, string(client.ServerVersion()))
-
-	session, err := client.NewSession()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer session.Close()
-
-	fd := int(os.Stdin.Fd())
-	state, err := terminal.MakeRaw(fd)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-	defer terminal.Restore(fd, state)
-
-	w, h, err := terminal.GetSize(fd)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	modes := ssh.TerminalModes{
-		ssh.ECHO:          1,
-		ssh.TTY_OP_ISPEED: 14400,
-		ssh.TTY_OP_OSPEED: 14400,
-	}
-	err = session.RequestPty("xterm", h, w, modes)
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	session.Stdout = os.Stdout
-	session.Stderr = os.Stderr
-	session.Stdin = os.Stdin
-
-	err = session.Shell()
-	if err != nil {
-		log.Error(err)
-		return
-	}
-
-	session.Wait()
 }
