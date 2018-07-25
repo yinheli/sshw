@@ -50,13 +50,13 @@ func NewClient(node *Node) Client {
 		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
 			answers = make([]string, len(questions))
 			for n := range questions {
-				answers[n] = password
+				answers[n] = node.Password
 			}
 
 			return answers, nil
 		}
 		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
-		authMethods = append(authMethods, ssh.Password(password))
+		authMethods = append(authMethods, password)
 	}
 
 	config := &ssh.ClientConfig{
