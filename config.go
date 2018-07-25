@@ -9,13 +9,14 @@ import (
 )
 
 type Node struct {
-	Name     string  `json:"name"`
-	Host     string  `json:"host"`
-	User     string  `json:"user"`
-	Port     int     `json:"port"`
-	KeyPath  string  `json:"keypath"`
-	Password string  `json:"password"`
-	Children []*Node `json:"children"`
+	Name       string  `json:"name"`
+	Host       string  `json:"host"`
+	User       string  `json:"user"`
+	Port       int     `json:"port"`
+	KeyPath    string  `json:"keypath"`
+	Passphrase string  `json:"passphrase"`
+	Password   string  `json:"password"`
+	Children   []*Node `json:"children"`
 }
 
 func (n *Node) String() string {
