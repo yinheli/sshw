@@ -36,16 +36,18 @@ func NewClient(node *Node) Client {
 	} else {
 		pemBytes, err = ioutil.ReadFile(node.KeyPath)
 	}
-
-	if err == nil {
+	if err != nil {
+		l.Error(err)
+	} else {
 		var signer ssh.Signer
-		var err error
 		if node.Passphrase != "" {
 			signer, err = ssh.ParsePrivateKeyWithPassphrase(pemBytes, []byte(node.Passphrase))
 		} else {
 			signer, err = ssh.ParsePrivateKey(pemBytes)
 		}
-		if err == nil {
+		if err != nil {
+			l.Error(err)
+		} else {
 			authMethods = append(authMethods, ssh.PublicKeys(signer))
 		}
 	}
