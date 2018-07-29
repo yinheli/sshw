@@ -1,6 +1,6 @@
 CMD = sshw
-GIT_TAG := $(shell (git describe --abbrev=0 --tags 2> /dev/null || echo v0.0.0) | head -n1)
-GIT_HASH := $(shell (git show-ref --head --hash=8 2> /dev/null || echo 00000000) | head -n1)
+GIT_TAG := $(shell (git describe --abbrev=0 --tags 2> /dev/null || echo $${SSHW_GIT_TAG:-'v0.0.0'}) | head -n1)
+GIT_HASH := $(shell (git show-ref --head --hash=8 2> /dev/null || echo $${SSHW_GIT_HASH:-'00000000'}) | head -n1)
 SRC_DIR := $(shell ls -d */|grep -vE 'vendor')
 
 PLATFORMS := linux/amd64 darwin/amd64
