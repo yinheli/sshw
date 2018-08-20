@@ -12,6 +12,25 @@ import (
 	"golang.org/x/crypto/ssh/terminal"
 )
 
+var (
+	DefaultCiphers = []string{
+		"aes128-ctr",
+		"aes192-ctr",
+		"aes256-ctr",
+		"aes128-gcm@openssh.com",
+		"chacha20-poly1305@openssh.com",
+		"arcfour256",
+		"arcfour128",
+		"arcfour",
+		"aes128-cbc",
+		"3des-cbc",
+		"blowfish-cbc",
+		"cast128-cbc",
+		"aes192-cbc",
+		"aes256-cbc",
+	}
+)
+
 type Client interface {
 	Login()
 }
@@ -75,7 +94,7 @@ func NewClient(node *Node) Client {
 	}
 
 	config.SetDefaults()
-	config.Ciphers = append(config.Ciphers, "aes128-cbc", "3des-cbc", "blowfish-cbc", "cast128-cbc", "aes192-cbc", "aes256-cbc")
+	config.Ciphers = append(config.Ciphers, DefaultCiphers...)
 
 	return &defaultClient{
 		clientConfig: config,
