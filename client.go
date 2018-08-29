@@ -156,5 +156,31 @@ func (c *defaultClient) Login() {
 		return
 	}
 
+	// interval get terminal size
+	// fix resize issue
+	go func() {
+		var (
+			ow = w
+			oh = h
+		)
+		for {
+			cw, ch, err := terminal.GetSize(fd)
+			if err != nil {
+				break
+			}
+
+			if cw != ow || ch != oh {
+				err = session.WindowChange(ch, cw)
+				if err != nil {
+					break
+				}
+				ow = cw
+				oh = ch
+			}
+			time.Sleep(time.Second)
+		}
+
+	}()
+
 	session.Wait()
 }
