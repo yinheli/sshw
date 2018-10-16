@@ -22,14 +22,14 @@ fmt:
 .PHONY: install
 install:
 	go install \
-	-ldflags='-X "main.Build=$(GIT_TAG)-$(GIT_HASH)"' \
+	-ldflags='-s -w -X "main.Build=$(GIT_TAG)-$(GIT_HASH)"' \
 	./cmd/$(CMD)
 
 PHONY: $(CMD)
 $(CMD):
 	go build \
 	-o release/$(CMD) \
-	-ldflags='-X "main.Build=$(GIT_TAG)-$(GIT_HASH)"' \
+	-ldflags='-s -w -X "main.Build=$(GIT_TAG)-$(GIT_HASH)"' \
 	./cmd/$(CMD)/main.go
 
 PHONY: $(PLATFORMS)
