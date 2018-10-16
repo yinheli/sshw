@@ -179,7 +179,14 @@ func (c *defaultClient) Login() {
 			}
 			time.Sleep(time.Second)
 		}
+	}()
 
+	// send keepalive
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+			client.SendRequest("keepalive@openssh.com", false, nil)
+		}
 	}()
 
 	session.Wait()
