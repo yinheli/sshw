@@ -1,8 +1,8 @@
 package sshw
 
 import (
-	"github.com/go-yaml/yaml"
 	"golang.org/x/crypto/ssh"
+	yaml "gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os/user"
 	"path"
