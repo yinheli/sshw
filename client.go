@@ -3,6 +3,7 @@ package sshw
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
@@ -175,13 +176,31 @@ func (c *defaultClient) Login() {
 
 	session.Stdout = os.Stdout
 	session.Stderr = os.Stderr
-	session.Stdin = os.Stdin
+	stdinPipe, err := session.StdinPipe()
+	if err != nil {
+		l.Error(err)
+		return
+	}
 
 	err = session.Shell()
 	if err != nil {
 		l.Error(err)
 		return
 	}
+
+	// then callback
+	for i := range c.node.CallbackShells {
+		shell := c.node.CallbackShells[i]
+		time.Sleep(shell.Delay * time.Millisecond)
+		stdinPipe.Write([]byte(shell.Cmd + "\r"))
+	}
+
+	// change stdin to user
+	go func() {
+		_, err = io.Copy(stdinPipe, os.Stdin)
+		l.Error(err)
+		session.Close()
+	}()
 
 	// interval get terminal size
 	// fix resize issue

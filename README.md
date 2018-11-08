@@ -18,7 +18,7 @@ or download binary from [releases](//github.com/yinheli/sshw/releases).
 
 ## config
 
-put config file in `~/.sshw`.
+put config file in `~/.sshw` or `~/.sshw.yml` or `~/.sshw.yaml` or `./.sshw` or `./.sshw.yml` or `./.sshw.yaml`.
 
 config example:
 
@@ -45,3 +45,14 @@ config example:
   - { name: server 2, user: root, host: 192.168.3.3 }
   - { name: server 3, user: root, host: 192.168.4.4 }
 ```
+
+# callback
+- name: dev server fully configured
+  user: appuser
+  host: 192.168.8.35
+  port: 22
+  password: 123456
+  callback-shells:
+  - {cmd: 2}
+  - {delay: 1500, cmd: 0}
+  - {cmd: 'echo 1'}
