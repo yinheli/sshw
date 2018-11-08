@@ -74,6 +74,12 @@ func NewClient(node *Node) Client {
 		}
 	}
 
+	password := node.password()
+
+	if password != nil {
+		authMethods = append(authMethods, password)
+	}
+
 	authMethods = append(authMethods, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
 		answers := make([]string, 0, len(questions))
 		for i, q := range questions {
@@ -98,21 +104,6 @@ func NewClient(node *Node) Client {
 		}
 		return answers, nil
 	}))
-
-	password := node.password()
-
-	if password != nil {
-		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
-			answers = make([]string, len(questions))
-			for n := range questions {
-				answers[n] = node.Password
-			}
-
-			return answers, nil
-		}
-		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
-		authMethods = append(authMethods, password)
-	}
 
 	config := &ssh.ClientConfig{
 		User:            node.user(),
