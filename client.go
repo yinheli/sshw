@@ -1,11 +1,13 @@
 package sshw
 
 import (
+	"bufio"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
+	"syscall"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -70,6 +72,31 @@ func NewClient(node *Node) Client {
 			authMethods = append(authMethods, ssh.PublicKeys(signer))
 		}
 	}
+
+	authMethods = append(authMethods, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+		answers := make([]string, 0, len(questions))
+		for i, q := range questions {
+			fmt.Print(q)
+			if echos[i] {
+				scan := bufio.NewScanner(os.Stdin)
+				if scan.Scan() {
+					answers = append(answers, scan.Text())
+				}
+				err := scan.Err()
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				b, err := terminal.ReadPassword(syscall.Stdin)
+				if err != nil {
+					return nil, err
+				}
+				fmt.Println()
+				answers = append(answers, string(b))
+			}
+		}
+		return answers, nil
+	}))
 
 	password := node.password()
 
