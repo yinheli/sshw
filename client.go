@@ -1,11 +1,14 @@
 package sshw
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"os"
 	"os/user"
 	"path"
+	"syscall"
 	"time"
 
 	"golang.org/x/crypto/ssh"
@@ -74,17 +77,33 @@ func NewClient(node *Node) Client {
 	password := node.password()
 
 	if password != nil {
-		interactive := func(user, instruction string, questions []string, echos []bool) (answers []string, err error) {
-			answers = make([]string, len(questions))
-			for n := range questions {
-				answers[n] = node.Password
-			}
-
-			return answers, nil
-		}
-		authMethods = append(authMethods, ssh.KeyboardInteractive(interactive))
 		authMethods = append(authMethods, password)
 	}
+
+	authMethods = append(authMethods, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+		answers := make([]string, 0, len(questions))
+		for i, q := range questions {
+			fmt.Print(q)
+			if echos[i] {
+				scan := bufio.NewScanner(os.Stdin)
+				if scan.Scan() {
+					answers = append(answers, scan.Text())
+				}
+				err := scan.Err()
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				b, err := terminal.ReadPassword(syscall.Stdin)
+				if err != nil {
+					return nil, err
+				}
+				fmt.Println()
+				answers = append(answers, string(b))
+			}
+		}
+		return answers, nil
+	}))
 
 	config := &ssh.ClientConfig{
 		User:            node.user(),
@@ -148,13 +167,31 @@ func (c *defaultClient) Login() {
 
 	session.Stdout = os.Stdout
 	session.Stderr = os.Stderr
-	session.Stdin = os.Stdin
+	stdinPipe, err := session.StdinPipe()
+	if err != nil {
+		l.Error(err)
+		return
+	}
 
 	err = session.Shell()
 	if err != nil {
 		l.Error(err)
 		return
 	}
+
+	// then callback
+	for i := range c.node.CallbackShells {
+		shell := c.node.CallbackShells[i]
+		time.Sleep(shell.Delay * time.Millisecond)
+		stdinPipe.Write([]byte(shell.Cmd + "\r"))
+	}
+
+	// change stdin to user
+	go func() {
+		_, err = io.Copy(stdinPipe, os.Stdin)
+		l.Error(err)
+		session.Close()
+	}()
 
 	// interval get terminal size
 	// fix resize issue
@@ -179,7 +216,14 @@ func (c *defaultClient) Login() {
 			}
 			time.Sleep(time.Second)
 		}
+	}()
 
+	// send keepalive
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+			client.SendRequest("keepalive@openssh.com", false, nil)
+		}
 	}()
 
 	session.Wait()

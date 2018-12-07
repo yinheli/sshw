@@ -2,21 +2,28 @@ package sshw
 
 import (
 	"golang.org/x/crypto/ssh"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os/user"
 	"path"
+	"time"
 )
 
 type Node struct {
-	Name       string  `json:"name"`
-	Host       string  `json:"host"`
-	User       string  `json:"user"`
-	Port       int     `json:"port"`
-	KeyPath    string  `json:"keypath"`
-	Passphrase string  `json:"passphrase"`
-	Password   string  `json:"password"`
-	Children   []*Node `json:"children"`
+	Name           string           `yaml:"name"`
+	Host           string           `yaml:"host"`
+	User           string           `yaml:"user"`
+	Port           int              `yaml:"port"`
+	KeyPath        string           `yaml:"keypath"`
+	Passphrase     string           `yaml:"passphrase"`
+	Password       string           `yaml:"password"`
+	CallbackShells []*CallbackShell `yaml:"callback-shells"`
+	Children       []*Node          `yaml:"children"`
+}
+
+type CallbackShell struct {
+	Cmd   string        `yaml:"cmd"`
+	Delay time.Duration `yaml:"delay"`
 }
 
 func (n *Node) String() string {
@@ -53,15 +60,10 @@ func GetConfig() []*Node {
 }
 
 func LoadConfig() error {
-	u, err := user.Current()
+	b, err := LoadConfigBytes(".sshw", ".sshw.yml", ".sshw.yaml")
 	if err != nil {
 		return err
 	}
-	b, err := ioutil.ReadFile(path.Join(u.HomeDir, ".sshw"))
-	if err != nil {
-		return err
-	}
-
 	var c []*Node
 	err = yaml.Unmarshal(b, &c)
 	if err != nil {
@@ -71,4 +73,26 @@ func LoadConfig() error {
 	config = c
 
 	return nil
+}
+
+func LoadConfigBytes(names ...string) ([]byte, error) {
+	u, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+	// homedir
+	for i := range names {
+		sshw, err := ioutil.ReadFile(path.Join(u.HomeDir, names[i]))
+		if err == nil {
+			return sshw, nil
+		}
+	}
+	// relative
+	for i := range names {
+		sshw, err := ioutil.ReadFile(names[i])
+		if err == nil {
+			return sshw, nil
+		}
+	}
+	return nil, err
 }
