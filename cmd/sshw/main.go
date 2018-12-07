@@ -74,9 +74,10 @@ func main() {
 }
 func GetNodeByName(name *string, trees []*sshw.Node) *sshw.Node {
 	key := *name
-	fmt.Print(key)
-	//遍历数组
 	for _, tree := range trees {
+		if tree.Name == key {
+			return tree
+		}
 		if tree.Children != nil {
 			for _, e := range tree.Children {
 				if e.Name == key {
