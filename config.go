@@ -17,6 +17,7 @@ type Node struct {
 	Passphrase string  `json:"passphrase"`
 	Password   string  `json:"password"`
 	Children   []*Node `json:"children"`
+	InitCmd    string  `json:"initcmd"`
 }
 
 func (n *Node) String() string {

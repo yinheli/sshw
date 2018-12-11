@@ -150,6 +150,11 @@ func (c *defaultClient) Login() {
 	session.Stderr = os.Stderr
 	session.Stdin = os.Stdin
 
+	l.Infof("initCmd: %s\n", c.node.InitCmd)
+
+	if c.node.InitCmd != "" {
+		session.Run(c.node.InitCmd)
+	}
 	err = session.Shell()
 	if err != nil {
 		l.Error(err)
