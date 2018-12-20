@@ -101,23 +101,31 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 		Size:         20,
 		HideSelected: true,
 		Searcher: func(input string, index int) bool {
-			node := trees[index]
-			content := fmt.Sprintf("%s %s %s", node.Name, node.User, node.Host)
-			if strings.Contains(input, " ") {
-				for _, key := range strings.Split(input, " ") {
-					key = strings.TrimSpace(key)
-					if key != "" {
-						if !strings.Contains(content, key) {
-							return false
+			searcher := func(node *sshw.Node, input string, index int) bool {
+				content := fmt.Sprintf("%s %s %s", node.Name, node.User, node.Host)
+				if strings.Contains(input, " ") {
+					for _, key := range strings.Split(input, " ") {
+						key = strings.TrimSpace(key)
+						if key != "" {
+							if !strings.Contains(content, key) {
+								return false
+							}
 						}
 					}
+					return true
 				}
-				return true
+				if strings.Contains(content, input) {
+					return true
+				}
+				return false
 			}
-			if strings.Contains(content, input) {
-				return true
+			node := trees[index]
+			for _, children := range node.Children {
+				if searcher(children, input, index) {
+					return true
+				}
 			}
-			return false
+			return searcher(node, input, index)
 		},
 	}
 	index, _, err := prompt.Run()
