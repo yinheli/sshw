@@ -16,8 +16,6 @@ all: clean $(CMD)
 fmt:
 	# gofmt code
 	gofmt -s -l -w $(SRC_DIR) *.go
-	go vet $(SRC_DIR)
-	go vet *.go
 
 .PHONY: install
 install:
