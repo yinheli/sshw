@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/user"
 	"path"
+	"strings"
 	"syscall"
 	"time"
 
@@ -126,9 +127,28 @@ func (c *defaultClient) Login() {
 	port := c.node.port()
 	client, err := ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), c.clientConfig)
 	if err != nil {
+		msg := err.Error()
+		// use terminal password retry
+		if strings.Contains(msg, "no supported methods remain") && !strings.Contains(msg, "password") {
+			fmt.Printf("%s@%s's password:", c.clientConfig.User, host)
+			var b []byte
+			b, err = terminal.ReadPassword(int(syscall.Stdin))
+			if err == nil {
+				p := string(b)
+				if p != "" {
+					c.clientConfig.Auth = append(c.clientConfig.Auth, ssh.Password(p))
+				}
+				fmt.Println()
+				client, err = ssh.Dial("tcp", fmt.Sprintf("%s:%d", host, port), c.clientConfig)
+			}
+		}
+	}
+
+	if err != nil {
 		l.Error(err)
 		return
 	}
+
 	defer client.Close()
 
 	l.Infof("connect server ssh -p %d %s@%s version: %s\n", port, c.node.user(), host, string(client.ServerVersion()))
