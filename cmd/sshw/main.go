@@ -17,6 +17,7 @@ var (
 	Build = "devel"
 	V     = flag.Bool("version", false, "show version")
 	H     = flag.Bool("help", false, "show help")
+	N     = flag.String("n", "", "ssh login by name")
 
 	log = sshw.GetLogger()
 
@@ -52,6 +53,17 @@ func main() {
 		os.Exit(1)
 	}
 
+	if *N != "" {
+		node := ChooseByName(N, sshw.GetConfig())
+		if node == nil {
+			return
+		}
+
+		client := sshw.NewClient(node)
+		client.Login()
+		return
+	}
+
 	node := choose(nil, sshw.GetConfig())
 	if node == nil {
 		return
@@ -59,6 +71,23 @@ func main() {
 
 	client := sshw.NewClient(node)
 	client.Login()
+}
+
+func ChooseByName(name *string, trees []*sshw.Node) *sshw.Node {
+	key := *name
+	for _, tree := range trees {
+		if tree.Name == key {
+			return tree
+		}
+		if tree.Children != nil {
+			for _, e := range tree.Children {
+				if e.Name == key {
+					return e
+				}
+			}
+		}
+	}
+	return nil
 }
 
 func choose(parent, trees []*sshw.Node) *sshw.Node {
