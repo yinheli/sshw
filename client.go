@@ -94,7 +94,7 @@ func NewClient(node *Node) Client {
 					return nil, err
 				}
 			} else {
-				b, err := terminal.ReadPassword(syscall.Stdin)
+				b, err := terminal.ReadPassword(int(syscall.Stdin))
 				if err != nil {
 					return nil, err
 				}
