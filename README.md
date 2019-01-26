@@ -47,6 +47,7 @@ config example:
 ```
 
 # callback
+```
 - name: dev server fully configured
   user: appuser
   host: 192.168.8.35
@@ -56,3 +57,4 @@ config example:
   - {cmd: 2}
   - {delay: 1500, cmd: 0}
   - {cmd: 'echo 1'}
+ ```
