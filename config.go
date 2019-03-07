@@ -1,11 +1,16 @@
 package sshw
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
 	"os/user"
 	"path"
+	"strconv"
 	"time"
 
+	"github.com/atrox/homedir"
+	"github.com/kevinburke/ssh_config"
 	"golang.org/x/crypto/ssh"
 	"gopkg.in/yaml.v2"
 )
@@ -78,6 +83,42 @@ func LoadConfig() error {
 
 	config = c
 
+	return nil
+}
+
+func LoadSshConfig() error {
+	u, err := user.Current()
+	if err != nil {
+		l.Error(err)
+		return nil
+	}
+	f, _ := os.Open(path.Join(u.HomeDir, ".ssh/config"))
+	cfg, _ := ssh_config.Decode(f)
+	var nc []*Node
+	for _, host := range cfg.Hosts {
+		alias := fmt.Sprintf("%s", host.Patterns[0])
+		hostName, err := cfg.Get(alias, "HostName")
+		if err != nil {
+			return err
+		}
+		if hostName != "" {
+			port, _ := cfg.Get(alias, "Port")
+			if port == "" {
+				port = "22"
+			}
+			var c = new(Node)
+			c.Name = alias
+			c.Alias = alias
+			c.Host = hostName
+			c.User, _ = cfg.Get(alias, "User")
+			c.Port, _ = strconv.Atoi(port)
+			keyPath, _ := cfg.Get(alias, "IdentityFile")
+			c.KeyPath, _ = homedir.Expand(keyPath)
+			nc = append(nc, c)
+			// fmt.Println(c.Alias, c.Host, c.User, c.Port, c.KeyPath)
+		}
+	}
+	config = nc
 	return nil
 }
 

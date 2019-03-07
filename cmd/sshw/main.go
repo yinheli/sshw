@@ -17,6 +17,7 @@ var (
 	Build = "devel"
 	V     = flag.Bool("version", false, "show version")
 	H     = flag.Bool("help", false, "show help")
+	S     = flag.Bool("s", false, "use local ssh config '~/.ssh/config'")
 
 	log = sshw.GetLogger()
 
@@ -57,12 +58,20 @@ func main() {
 		fmt.Println("  go version :", runtime.Version())
 		return
 	}
-
-	err := sshw.LoadConfig()
-	if err != nil {
-		log.Error("load config error", err)
-		os.Exit(1)
+	if *S {
+		err := sshw.LoadSshConfig()
+		if err != nil {
+			log.Error("load ssh config error", err)
+			os.Exit(1)
+		}
+	} else {
+		err := sshw.LoadConfig()
+		if err != nil {
+			log.Error("load config error", err)
+			os.Exit(1)
+		}
 	}
+
 	// login by alias
 	if len(os.Args) > 1 {
 		var nodeAlias = os.Args[1]
