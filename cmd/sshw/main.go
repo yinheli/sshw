@@ -27,6 +27,18 @@ var (
 	}
 )
 
+func findAlias(nodes []*sshw.Node, nodeAlias string) *sshw.Node {
+	for _, node := range nodes {
+		if node.Alias == nodeAlias {
+			return node
+		}
+		if len(node.Children) > 0 {
+			return findAlias(node.Children, nodeAlias)
+		}
+	}
+	return nil
+}
+
 func main() {
 	flag.Parse()
 	if !flag.Parsed() {
@@ -55,12 +67,11 @@ func main() {
 	if len(os.Args) > 1 {
 		var nodeAlias = os.Args[1]
 		var nodes = sshw.GetConfig()
-		for _, node := range nodes {
-			if node.Alias == nodeAlias {
-				client := sshw.NewClient(node)
-				client.Login()
-				return
-			}
+		var node = findAlias(nodes, nodeAlias)
+		if node != nil {
+			client := sshw.NewClient(node)
+			client.Login()
+			return
 		}
 	}
 
