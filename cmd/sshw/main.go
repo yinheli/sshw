@@ -103,6 +103,9 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 	}
 
 	if node.Name == prev {
+		if parent == nil {
+			return choose(nil, sshw.GetConfig())
+		}
 		return choose(nil, parent)
 	}
 
