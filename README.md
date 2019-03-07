@@ -30,6 +30,7 @@ config example:
 - { name: dev server without user, host: 192.168.8.35 }
 - { name: dev server without password, host: 192.168.8.35 }
 - { name: ⚡️ server with emoji name, host: 192.168.8.35 }
+- { name: server with alias, alias: dev, host: 192.168.8.35 }
 
 # server group 1
 - name: server group 1

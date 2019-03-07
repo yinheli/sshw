@@ -1,16 +1,18 @@
 package sshw
 
 import (
-	"golang.org/x/crypto/ssh"
-	"gopkg.in/yaml.v2"
 	"io/ioutil"
 	"os/user"
 	"path"
 	"time"
+
+	"golang.org/x/crypto/ssh"
+	"gopkg.in/yaml.v2"
 )
 
 type Node struct {
 	Name           string           `yaml:"name"`
+	Alias          string           `yaml:"alias"`
 	Host           string           `yaml:"host"`
 	User           string           `yaml:"user"`
 	Port           int              `yaml:"port"`
@@ -49,6 +51,10 @@ func (n *Node) password() ssh.AuthMethod {
 		return nil
 	}
 	return ssh.Password(n.Password)
+}
+
+func (n *Node) alias() string {
+	return n.Alias
 }
 
 var (

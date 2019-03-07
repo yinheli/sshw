@@ -22,10 +22,22 @@ var (
 
 	templates = &promptui.SelectTemplates{
 		Label:    "✨ {{ . | green}}",
-		Active:   "➤ {{ .Name | cyan }} {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
-		Inactive: "  {{.Name | faint}} {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
+		Active:   "➤ {{ .Name | cyan  }}{{if .Alias}}({{.Alias | yellow}}){{end}} {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
+		Inactive: "  {{.Name | faint}}{{if .Alias}}({{.Alias | faint}}){{end}}  {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
 	}
 )
+
+func findAlias(nodes []*sshw.Node, nodeAlias string) *sshw.Node {
+	for _, node := range nodes {
+		if node.Alias == nodeAlias {
+			return node
+		}
+		if len(node.Children) > 0 {
+			return findAlias(node.Children, nodeAlias)
+		}
+	}
+	return nil
+}
 
 func main() {
 	flag.Parse()
@@ -50,6 +62,17 @@ func main() {
 	if err != nil {
 		log.Error("load config error", err)
 		os.Exit(1)
+	}
+	// login by alias
+	if len(os.Args) > 1 {
+		var nodeAlias = os.Args[1]
+		var nodes = sshw.GetConfig()
+		var node = findAlias(nodes, nodeAlias)
+		if node != nil {
+			client := sshw.NewClient(node)
+			client.Login()
+			return
+		}
 	}
 
 	node := choose(nil, sshw.GetConfig())
