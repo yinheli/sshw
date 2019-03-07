@@ -51,6 +51,18 @@ func main() {
 		log.Error("load config error", err)
 		os.Exit(1)
 	}
+	// login by alias
+	if len(os.Args) > 1 {
+		var nodeAlias = os.Args[1]
+		var nodes = sshw.GetConfig()
+		for _, node := range nodes {
+			if node.Alias == nodeAlias {
+				client := sshw.NewClient(node)
+				client.Login()
+				return
+			}
+		}
+	}
 
 	node := choose(nil, sshw.GetConfig())
 	if node == nil {
