@@ -41,6 +41,7 @@ config example:
      host: 192.168.8.36
      port: 2222
 
+
 # server group 1
 - name: server group 1
   children:

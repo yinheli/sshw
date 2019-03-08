@@ -1,8 +1,13 @@
 language: go
 
 go:
-  - "1.11.x"
+  - "1.11.5"
   - master
 
+env:
+  - GO111MODULE=on
+
+install: true
+
 script:
-  - export GO111MODULE=on && go run mage.go -v clean fmt test pack
+  - go run mage.go -v clean fmt test pack
