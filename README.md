@@ -30,6 +30,7 @@ config example:
 - { name: dev server without user, host: 192.168.8.35 }
 - { name: dev server without password, host: 192.168.8.35 }
 - { name: ⚡️ server with emoji name, host: 192.168.8.35 }
+- { name: server with alias, alias: dev, host: 192.168.8.35 }
 - name: server with jump
    user: appuser
    host: 192.168.8.35
@@ -53,7 +54,6 @@ config example:
   - { name: server 1, user: root, host: 192.168.2.2 }
   - { name: server 2, user: root, host: 192.168.3.3 }
   - { name: server 3, user: root, host: 192.168.4.4 }
-
 ```
 
 # callback
