@@ -26,6 +26,7 @@ type Node struct {
 	Password       string           `yaml:"password"`
 	CallbackShells []*CallbackShell `yaml:"callback-shells"`
 	Children       []*Node          `yaml:"children"`
+	Jump           []*Node          `yaml:"jump"`
 }
 
 type CallbackShell struct {
