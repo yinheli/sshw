@@ -95,10 +95,11 @@ func main() {
 
 func choose(parent, trees []*sshw.Node) *sshw.Node {
 	prompt := promptui.Select{
-		Label:     "select host",
-		Items:     trees,
-		Templates: templates,
-		Size:      20,
+		Label:        "select host",
+		Items:        trees,
+		Templates:    templates,
+		Size:         20,
+		HideSelected: true,
 		Searcher: func(input string, index int) bool {
 			node := trees[index]
 			content := fmt.Sprintf("%s %s %s", node.Name, node.User, node.Host)
