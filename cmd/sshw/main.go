@@ -18,13 +18,14 @@ var (
 	V     = flag.Bool("version", false, "show version")
 	H     = flag.Bool("help", false, "show help")
 	S     = flag.Bool("s", false, "use local ssh config '~/.ssh/config'")
+	Y     = flag.Bool("yaml", false, "conver ~/.ssh/config to $PWD/sshconfig.yaml")
 
 	log = sshw.GetLogger()
 
 	templates = &promptui.SelectTemplates{
-		Label:    "✨ {{ . | green}}",
-		Active:   "➤ {{ .Name | cyan  }}{{if .Alias}}({{.Alias | yellow}}){{end}} {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
-		Inactive: "  {{.Name | faint}}{{if .Alias}}({{.Alias | faint}}){{end}} {{if .Host}}{{if .User}}{{.User | faint}}{{`@` | faint}}{{end}}{{.Host | faint}}{{end}}",
+		Label:    "✨ {{ . | green }}",
+		Active:   "➤ {{ .Name | cyan }}{{ if .Alias }}({{ .Alias | yellow }}){{ end }} {{ if .Host }}{{ if .User }}{{ .User | faint }}{{ `@` | faint }}{{ end }}{{ .Host | faint }}{{ end }}",
+		Inactive: "  {{ .Name | faint }}{{ if .Alias }}({{ .Alias | faint }}){{ end }} {{ if .Host }}{{ if .User }}{{ .User | faint }}{{ `@` | faint }}{{ end }}{{ .Host | faint }}{{ end }}",
 	}
 )
 
@@ -56,6 +57,10 @@ func main() {
 		fmt.Println("sshw - ssh client wrapper for automatic login")
 		fmt.Println("  git version:", Build)
 		fmt.Println("  go version :", runtime.Version())
+		return
+	}
+	if *Y {
+		sshw.GenYaml()
 		return
 	}
 	if *S {
