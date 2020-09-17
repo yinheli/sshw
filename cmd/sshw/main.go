@@ -18,7 +18,7 @@ var (
 	V     = flag.Bool("version", false, "show version")
 	H     = flag.Bool("help", false, "show help")
 	S     = flag.Bool("s", false, "use local ssh config '~/.ssh/config'")
-	Y     = flag.Bool("yaml", false, "conver ~/.ssh/config to $PWD/sshconfig.yaml")
+	Y     = flag.Bool("yaml", false, "convert ~/.ssh/config to $PWD/sshconfig.yaml")
 
 	log = sshw.GetLogger()
 
