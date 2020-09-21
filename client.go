@@ -55,28 +55,6 @@ func genSSHConfig(node *Node) *defaultClient {
 
 	var authMethods []ssh.AuthMethod
 
-	var pemBytes []byte
-	if node.KeyPath == "" {
-		pemBytes, err = ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
-	} else {
-		pemBytes, err = ioutil.ReadFile(node.KeyPath)
-	}
-	if err != nil {
-		l.Error(err)
-	} else {
-		var signer ssh.Signer
-		if node.Passphrase != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(pemBytes, []byte(node.Passphrase))
-		} else {
-			signer, err = ssh.ParsePrivateKey(pemBytes)
-		}
-		if err != nil {
-			l.Error(err)
-		} else {
-			authMethods = append(authMethods, ssh.PublicKeys(signer))
-		}
-	}
-
 	password := node.password()
 
 	if password != nil {
@@ -108,16 +86,40 @@ func genSSHConfig(node *Node) *defaultClient {
 		return answers, nil
 	}))
 
+	var pemBytes []byte
+	if node.KeyPath == "" {
+		pemBytes, err = ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
+		if len(authMethods) == 0 {
+			l.Error(err)
+		}
+	} else {
+		pemBytes, err = ioutil.ReadFile(node.KeyPath)
+		if err != nil {
+			l.Error(err)
+		}
+	}
+	if err == nil {
+		var signer ssh.Signer
+		if node.Passphrase != "" {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase(pemBytes, []byte(node.Passphrase))
+		} else {
+			signer, err = ssh.ParsePrivateKey(pemBytes)
+		}
+		if err != nil {
+			l.Error(err)
+		} else {
+			authMethods = append(authMethods, ssh.PublicKeys(signer))
+		}
+	}
+
 	config := &ssh.ClientConfig{
 		User:            node.user(),
 		Auth:            authMethods,
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 		Timeout:         time.Second * 10,
 	}
-
 	config.SetDefaults()
 	config.Ciphers = append(config.Ciphers, DefaultCiphers...)
-
 	return &defaultClient{
 		clientConfig: config,
 		node:         node,
