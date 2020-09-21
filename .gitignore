@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+/build
 
 # Test binary, build with `go test -c`
 *.test
@@ -12,5 +13,5 @@
 *.out
 
 # Misc
-/release
+/dist
 .idea
