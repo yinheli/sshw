@@ -4,7 +4,7 @@ go 1.18
 
 require (
 	github.com/atrox/homedir v1.0.0
-	github.com/kevinburke/ssh_config v0.0.0-20180830205328-81db2a75821e
+	github.com/kevinburke/ssh_config v1.2.0
 	github.com/magefile/mage v1.8.0
 	github.com/manifoldco/promptui v0.3.3-0.20190221150523-ae9f05e7444d
 	golang.org/x/crypto v0.0.0-20180718160520-a2144134853f
@@ -25,7 +25,6 @@ require (
 	github.com/mattn/go-colorable v0.0.9 // indirect
 	github.com/mattn/go-isatty v0.0.4 // indirect
 	github.com/nicksnyder/go-i18n v1.10.0 // indirect
-	github.com/pelletier/go-buffruneio v0.2.0 // indirect
 	github.com/pelletier/go-toml v1.2.0 // indirect
 	github.com/tsenart/deadcode v0.0.0-20160724212837-210d2dc333e9 // indirect
 	golang.org/x/lint v0.0.0-20181026193005-c67002cb31c3 // indirect
