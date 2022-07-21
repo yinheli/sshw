@@ -38,6 +38,7 @@ func Build() error {
 func Pack() error {
 	buildTarget("darwin", "amd64", nil)
 	buildTarget("darwin", "386", nil)
+	buildTarget("darwin", "arm64", nil)
 	buildTarget("freebsd", "amd64", nil)
 	buildTarget("freebsd", "386", nil)
 	buildTarget("linux", "amd64", nil)
