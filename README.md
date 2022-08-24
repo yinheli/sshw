@@ -18,10 +18,18 @@ or download binary from [releases](//github.com/yinheli/sshw/releases).
 
 ## config
 
-put config file in `~/.sshw` or `~/.sshw.yml` or `~/.sshw.yaml` or `./.sshw` or `./.sshw.yml` or `./.sshw.yaml`.
+config file load in following order:
+
+- `~/.sshw`
+- `~/.sshw.yml`
+- `~/.sshw.yaml`
+- `./.sshw`
+- `./.sshw.yml`
+- `./.sshw.yaml`
 
 config example:
 
+<!-- prettier-ignore -->
 ```yaml
 - { name: dev server fully configured, user: appuser, host: 192.168.8.35, port: 22, password: 123456 }
 - { name: dev server with key path, user: appuser, host: 192.168.8.35, port: 22, keypath: /root/.ssh/id_rsa }
@@ -58,14 +66,16 @@ config example:
 ```
 
 # callback
-```
+
+<!-- prettier-ignore -->
+```yaml
 - name: dev server fully configured
   user: appuser
   host: 192.168.8.35
   port: 22
   password: 123456
   callback-shells:
-  - {cmd: 2}
-  - {delay: 1500, cmd: 0}
-  - {cmd: 'echo 1'}
- ```
+    - { cmd: 2 }
+    - { delay: 1500, cmd: 0 }
+    - { cmd: "echo 1" }
+```
