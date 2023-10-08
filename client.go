@@ -8,7 +8,7 @@ import (
 	"net"
 	"os"
 	"os/user"
-	"path"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -57,7 +57,7 @@ func genSSHConfig(node *Node) *defaultClient {
 
 	var pemBytes []byte
 	if node.KeyPath == "" {
-		pemBytes, err = ioutil.ReadFile(path.Join(u.HomeDir, ".ssh/id_rsa"))
+		pemBytes, err = ioutil.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
 	} else {
 		pemBytes, err = ioutil.ReadFile(node.KeyPath)
 	}
