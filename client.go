@@ -198,7 +198,10 @@ func (c *defaultClient) Login() {
 	}
 	defer terminal.Restore(fd, state)
 
-	w, h, err := terminal.GetSize(fd)
+	//changed fd to int(os.Stdout.Fd()) becaused terminal.GetSize(fd) doesn't work in Windows
+	//refrence: https://github.com/golang/go/issues/20388
+	w, h, err := terminal.GetSize(int(os.Stdout.Fd()))
+
 	if err != nil {
 		l.Error(err)
 		return
