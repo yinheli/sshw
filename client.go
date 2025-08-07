@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
@@ -46,6 +46,36 @@ type defaultClient struct {
 	node         *Node
 }
 
+func expandHomePath(path string) (string, error) {
+	if strings.HasPrefix(path, "~") {
+		var homeDir string
+		var err error
+
+		if runtime.GOOS == "windows" {
+			homeDir = os.Getenv("USERPROFILE")
+		} else {
+			homeDir = os.Getenv("HOME")
+		}
+
+		if homeDir == "" {
+			homeDir, err = os.UserHomeDir()
+			if err != nil {
+				return "", err
+			}
+		}
+
+		if path == "~" {
+			return homeDir, nil
+		}
+
+		if strings.HasPrefix(path, "~/") {
+			return filepath.Join(homeDir, path[2:]), nil
+		}
+	}
+
+	return path, nil
+}
+
 func genSSHConfig(node *Node) *defaultClient {
 	u, err := user.Current()
 	if err != nil {
@@ -57,9 +87,16 @@ func genSSHConfig(node *Node) *defaultClient {
 
 	var pemBytes []byte
 	if node.KeyPath == "" {
-		pemBytes, err = ioutil.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
+		pemBytes, err = os.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
 	} else {
-		pemBytes, err = ioutil.ReadFile(node.KeyPath)
+		// if node.KeyPath start with ~ , replace it with user's home dir
+		if strings.HasPrefix(node.KeyPath, "~") {
+			node.KeyPath, err = expandHomePath(node.KeyPath)
+			if err != nil {
+				l.Errorf("expand home path error: %v", err)
+			}
+		}
+		pemBytes, err = os.ReadFile(node.KeyPath)
 	}
 	if err != nil {
 		l.Error(err)
