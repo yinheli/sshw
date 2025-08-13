@@ -8,12 +8,12 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"syscall"
 	"time"
 
+	"github.com/atrox/homedir"
 	"golang.org/x/crypto/ssh"
 	"golang.org/x/crypto/ssh/terminal"
 )
@@ -46,36 +46,6 @@ type defaultClient struct {
 	node         *Node
 }
 
-func expandHomePath(path string) (string, error) {
-	if strings.HasPrefix(path, "~") {
-		var homeDir string
-		var err error
-
-		if runtime.GOOS == "windows" {
-			homeDir = os.Getenv("USERPROFILE")
-		} else {
-			homeDir = os.Getenv("HOME")
-		}
-
-		if homeDir == "" {
-			homeDir, err = os.UserHomeDir()
-			if err != nil {
-				return "", err
-			}
-		}
-
-		if path == "~" {
-			return homeDir, nil
-		}
-
-		if strings.HasPrefix(path, "~/") {
-			return filepath.Join(homeDir, path[2:]), nil
-		}
-	}
-
-	return path, nil
-}
-
 func genSSHConfig(node *Node) *defaultClient {
 	u, err := user.Current()
 	if err != nil {
@@ -91,7 +61,7 @@ func genSSHConfig(node *Node) *defaultClient {
 	} else {
 		// if node.KeyPath start with ~ , replace it with user's home dir
 		if strings.HasPrefix(node.KeyPath, "~") {
-			node.KeyPath, err = expandHomePath(node.KeyPath)
+			node.KeyPath, err = homedir.Expand(node.KeyPath)
 			if err != nil {
 				l.Errorf("expand home path error: %v", err)
 			}
