@@ -70,8 +70,8 @@ func GetConfig() []*Node {
 	return config
 }
 
-func LoadConfig() error {
-	b, err := LoadConfigBytes(".sshw", ".sshw.yml", ".sshw.yaml")
+func LoadConfig(path string) error {
+	b, err := LoadConfigBytes(path, ".sshw", ".sshw.yml", ".sshw.yaml")
 	if err != nil {
 		return err
 	}

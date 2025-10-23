@@ -249,7 +249,9 @@ func (c *defaultClient) Login() {
 	// change stdin to user
 	go func() {
 		_, err = io.Copy(stdinPipe, os.Stdin)
-		l.Error(err)
+		if err != io.EOF {
+			l.Error(err)
+		}
 		session.Close()
 	}()
 

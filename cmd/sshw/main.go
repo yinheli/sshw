@@ -7,8 +7,8 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/hellojukay/sshw"
 	"github.com/manifoldco/promptui"
-	"github.com/yinheli/sshw"
 )
 
 const prev = "-parent-"
@@ -18,6 +18,7 @@ var (
 	V     = flag.Bool("version", false, "show version")
 	H     = flag.Bool("help", false, "show help")
 	S     = flag.Bool("s", false, "use local ssh config '~/.ssh/config'")
+	F     = flag.String("f", "~/.sshw", "inventory config path")
 
 	log = sshw.GetLogger()
 
@@ -65,7 +66,7 @@ func main() {
 			os.Exit(1)
 		}
 	} else {
-		err := sshw.LoadConfig()
+		err := sshw.LoadConfig(*F)
 		if err != nil {
 			log.Error("load config error", err)
 			os.Exit(1)
@@ -84,13 +85,16 @@ func main() {
 		}
 	}
 
-	node := choose(nil, sshw.GetConfig())
-	if node == nil {
-		return
-	}
+	for {
+		node := choose(nil, sshw.GetConfig())
+		if node == nil {
+			return
+		}
 
-	client := sshw.NewClient(node)
-	client.Login()
+		client := sshw.NewClient(node)
+		client.Login()
+
+	}
 }
 
 func choose(parent, trees []*sshw.Node) *sshw.Node {

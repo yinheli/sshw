@@ -1,6 +1,8 @@
-module github.com/yinheli/sshw
+module github.com/hellojukay/sshw
 
-go 1.23
+go 1.23.0
+
+toolchain go1.24.1
 
 require (
 	github.com/atrox/homedir v1.0.0
