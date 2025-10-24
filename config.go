@@ -6,6 +6,7 @@ import (
 	"os/user"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/atrox/homedir"
@@ -71,7 +72,8 @@ func GetConfig() []*Node {
 }
 
 func LoadConfig(path string) error {
-	b, err := LoadConfigBytes(path, ".sshw", ".sshw.yml", ".sshw.yaml")
+	println(path)
+	b, err := LoadConfigBytes(path, "~/.sshw", "~/.sshw.yml", "~/.sshw.yaml")
 	if err != nil {
 		return err
 	}
@@ -123,16 +125,18 @@ func LoadSshConfig() error {
 }
 
 func LoadConfigBytes(names ...string) ([]byte, error) {
-	u, err := user.Current()
-	if err != nil {
-		return nil, err
-	}
-	// homedir
 	for i := range names {
-		sshw, err := os.ReadFile(path.Join(u.HomeDir, names[i]))
-		if err == nil {
-			return sshw, nil
+		path := names[i]
+		if strings.HasPrefix(path, "~") {
+			path, _ = homedir.Expand(path)
 		}
+		sshw, err := os.ReadFile(path)
+		if err != nil {
+			l.Errorf("read %s error: %v , skiped", path, err)
+			continue
+		}
+		return sshw, nil
+
 	}
 	// relative
 	for i := range names {
@@ -141,5 +145,5 @@ func LoadConfigBytes(names ...string) ([]byte, error) {
 			return sshw, nil
 		}
 	}
-	return nil, err
+	return nil, nil
 }
