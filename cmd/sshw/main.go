@@ -4,14 +4,19 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"os/signal"
 	"runtime"
 	"strings"
+	"syscall"
 
 	"github.com/hellojukay/sshw"
 	"github.com/manifoldco/promptui"
 )
 
-const prev = "-parent-"
+const (
+	prev = "-parent-"
+	exit = "-exit-"
+)
 
 var (
 	Build = "devel"
@@ -59,6 +64,16 @@ func main() {
 		fmt.Println("  go version :", runtime.Version())
 		return
 	}
+	
+	// 设置信号处理，支持Ctrl+C退出
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fmt.Println("\n程序已退出")
+		os.Exit(0)
+	}()
+	
 	if *S {
 		err := sshw.LoadSshConfig()
 		if err != nil {
@@ -98,6 +113,12 @@ func main() {
 }
 
 func choose(parent, trees []*sshw.Node) *sshw.Node {
+	// 添加退出选项到根级别菜单
+	if parent == nil {
+		exitNode := &sshw.Node{Name: exit}
+		trees = append([]*sshw.Node{exitNode}, trees...)
+	}
+	
 	prompt := promptui.Select{
 		Label:        "select host",
 		Items:        trees,
@@ -130,6 +151,12 @@ func choose(parent, trees []*sshw.Node) *sshw.Node {
 	}
 
 	node := trees[index]
+	
+	// 处理退出选项
+	if node.Name == exit {
+		return nil
+	}
+	
 	if len(node.Children) > 0 {
 		first := node.Children[0]
 		if first.Name != prev {
