@@ -107,24 +107,24 @@ func genSSHConfig(node *Node) *defaultClient {
 		} else {
 			authMethods = append(authMethods, ssh.PublicKeysCallback(agentClient.Signers))
 		}
-	}
-
-	// Add key file authentication if KeyPath is configured or default key exists
-	pemBytes, err := genPemBytes(node)
-	if err != nil {
-		l.Error(err)
 	} else {
-		for _, pemByte := range pemBytes {
-			var signer ssh.Signer
-			if node.Passphrase != "" {
-				signer, err = ssh.ParsePrivateKeyWithPassphrase(pemByte, []byte(node.Passphrase))
-			} else {
-				signer, err = ssh.ParsePrivateKey(pemByte)
-			}
-			if err != nil {
-				l.Error(err)
-			} else {
-				authMethods = append(authMethods, ssh.PublicKeys(signer))
+		// Add key file authentication if KeyPath is configured or default key exists
+		pemBytes, err := genPemBytes(node)
+		if err != nil {
+			l.Error(err)
+		} else {
+			for _, pemByte := range pemBytes {
+				var signer ssh.Signer
+				if node.Passphrase != "" {
+					signer, err = ssh.ParsePrivateKeyWithPassphrase(pemByte, []byte(node.Passphrase))
+				} else {
+					signer, err = ssh.ParsePrivateKey(pemByte)
+				}
+				if err != nil {
+					l.Error(err)
+				} else {
+					authMethods = append(authMethods, ssh.PublicKeys(signer))
+				}
 			}
 		}
 	}
