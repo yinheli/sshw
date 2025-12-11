@@ -4,7 +4,6 @@ import (
 	"bufio"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"net"
 	"os"
 	"os/user"
@@ -14,7 +13,9 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/atrox/homedir"
 	"golang.org/x/crypto/ssh"
+	"golang.org/x/crypto/ssh/agent"
 	"golang.org/x/crypto/ssh/terminal"
 )
 
@@ -46,34 +47,85 @@ type defaultClient struct {
 	node         *Node
 }
 
-func genSSHConfig(node *Node) *defaultClient {
-	u, err := user.Current()
+// connectAgent connects to SSH agent and returns the agent client
+func connectAgent(agentPath string) (agent.Agent, error) {
+	// Expand ~ in path (Go's net.DialTimeout doesn't expand ~)
+	expandedPath, err := homedir.Expand(agentPath)
 	if err != nil {
-		l.Error(err)
-		return nil
+		return nil, err
 	}
 
+	// Determine if it's a Unix socket or TCP address
+	// Unix socket: contains path separators (/) or starts with /
+	// TCP: format like host:port (no path separators)
+	var conn net.Conn
+	if strings.Contains(expandedPath, "/") {
+		// Unix socket
+		conn, err = net.DialTimeout("unix", expandedPath, time.Second*10)
+	} else {
+		// TCP address (e.g., localhost:1234)
+		conn, err = net.DialTimeout("tcp", expandedPath, time.Second*10)
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	return agent.NewClient(conn), nil
+}
+
+// gen pem bytes from key path (not from agent)
+func genPemBytes(node *Node) ([][]byte, error) {
+	switch {
+	case node.KeyPath != "":
+		bytes, err := os.ReadFile(node.KeyPath)
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{bytes}, nil
+	default:
+		u, err := user.Current()
+		if err != nil {
+			return nil, err
+		}
+		bytes, err := os.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
+		if err != nil {
+			return nil, err
+		}
+		return [][]byte{bytes}, nil
+	}
+}
+
+func genSSHConfig(node *Node) *defaultClient {
+	// support multiple auth methods
 	var authMethods []ssh.AuthMethod
 
-	var pemBytes []byte
-	if node.KeyPath == "" {
-		pemBytes, err = ioutil.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
-	} else {
-		pemBytes, err = ioutil.ReadFile(node.KeyPath)
-	}
-	if err != nil {
-		l.Error(err)
-	} else {
-		var signer ssh.Signer
-		if node.Passphrase != "" {
-			signer, err = ssh.ParsePrivateKeyWithPassphrase(pemBytes, []byte(node.Passphrase))
-		} else {
-			signer, err = ssh.ParsePrivateKey(pemBytes)
-		}
+	// Add SSH agent authentication if AgentPath is configured
+	if node.AgentPath != "" {
+		agentClient, err := connectAgent(node.AgentPath)
 		if err != nil {
 			l.Error(err)
 		} else {
-			authMethods = append(authMethods, ssh.PublicKeys(signer))
+			authMethods = append(authMethods, ssh.PublicKeysCallback(agentClient.Signers))
+		}
+	}
+
+	// Add key file authentication if KeyPath is configured or default key exists
+	pemBytes, err := genPemBytes(node)
+	if err != nil {
+		l.Error(err)
+	} else {
+		for _, pemByte := range pemBytes {
+			var signer ssh.Signer
+			if node.Passphrase != "" {
+				signer, err = ssh.ParsePrivateKeyWithPassphrase(pemByte, []byte(node.Passphrase))
+			} else {
+				signer, err = ssh.ParsePrivateKey(pemByte)
+			}
+			if err != nil {
+				l.Error(err)
+			} else {
+				authMethods = append(authMethods, ssh.PublicKeys(signer))
+			}
 		}
 	}
 
