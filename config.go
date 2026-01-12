@@ -95,9 +95,10 @@ func LoadSshConfig() error {
 		return nil
 	}
 	f, _ := os.Open(path.Join(u.HomeDir, ".ssh/config"))
+	defer f.Close()
+
 	cfg, _ := ssh_config.Decode(f)
 	var nc []*Node
-	fmt.Println(*cfg)
 	for _, host := range cfg.Hosts {
 		alias := fmt.Sprintf("%s", host.Patterns[0])
 		hostName, err := cfg.Get(alias, "HostName")

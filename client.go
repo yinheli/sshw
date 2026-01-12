@@ -42,100 +42,99 @@ type Client interface {
 	Login()
 }
 
+type cleanupFunc func()
+
 type defaultClient struct {
 	clientConfig *ssh.ClientConfig
 	node         *Node
+	cleanups     []cleanupFunc
 }
 
-// connectAgent connects to SSH agent and returns the agent client
-func connectAgent(agentPath string) (agent.Agent, error) {
-	// Expand ~ in path (Go's net.DialTimeout doesn't expand ~)
+func getAgentConn(agentPath string) (net.Conn, error) {
+	if len(agentPath) == 0 {
+		return nil, nil
+	}
 	expandedPath, err := homedir.Expand(agentPath)
 	if err != nil {
 		return nil, err
 	}
+	// IdentityAgent
+	//  Specifies the UNIX-domain socket used to communicate with the
+	//  authentication agent.
+	return net.DialTimeout("unix", expandedPath, time.Second*10)
+}
 
-	// Determine if it's a Unix socket or TCP address
-	// Unix socket: contains path separators (/) or starts with /
-	// TCP: format like host:port (no path separators)
-	var conn net.Conn
-	if strings.Contains(expandedPath, "/") {
-		// Unix socket
-		conn, err = net.DialTimeout("unix", expandedPath, time.Second*10)
+func setupAgentAuth(node *Node) (ssh.AuthMethod, cleanupFunc, error) {
+	if node.AgentPath == "" {
+		return nil, nil, nil
+	}
+
+	conn, err := getAgentConn(node.AgentPath)
+	if err != nil {
+		return nil, nil, err
+	}
+	client := agent.NewClient(conn)
+	return ssh.PublicKeysCallback(client.Signers), func() { conn.Close() }, nil
+}
+
+func setupKeyFileAuth(node *Node) (ssh.AuthMethod, cleanupFunc, error) {
+	keyPath := node.KeyPath
+	if keyPath == "" {
+		return nil, nil, nil
+	}
+
+	keyPath, err := homedir.Expand(keyPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	bytes, err := os.ReadFile(keyPath)
+	if err != nil {
+		return nil, nil, err
+	}
+
+	var signer ssh.Signer
+	if node.Passphrase != "" {
+		signer, err = ssh.ParsePrivateKeyWithPassphrase(bytes, []byte(node.Passphrase))
 	} else {
-		// TCP address (e.g., localhost:1234)
-		conn, err = net.DialTimeout("tcp", expandedPath, time.Second*10)
+		signer, err = ssh.ParsePrivateKey(bytes)
 	}
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
-
-	return agent.NewClient(conn), nil
+	return ssh.PublicKeys(signer), nil, nil
 }
 
-// gen pem bytes from key path (not from agent)
-func genPemBytes(node *Node) ([][]byte, error) {
-	switch {
-	case node.KeyPath != "":
-		bytes, err := os.ReadFile(node.KeyPath)
-		if err != nil {
-			return nil, err
-		}
-		return [][]byte{bytes}, nil
-	default:
-		u, err := user.Current()
-		if err != nil {
-			return nil, err
-		}
-		bytes, err := os.ReadFile(filepath.Join(u.HomeDir, ".ssh/id_rsa"))
-		if err != nil {
-			return nil, err
-		}
-		return [][]byte{bytes}, nil
+func setupDefaultKeyAuth(node *Node) (ssh.AuthMethod, cleanupFunc, error) {
+	u, err := user.Current()
+	if err != nil {
+		return nil, nil, err
 	}
+	keyPath := filepath.Join(u.HomeDir, ".ssh/id_rsa")
+	bytes, err := os.ReadFile(keyPath)
+	if err == nil && len(bytes) > 0 {
+		var signer ssh.Signer
+		if node.Passphrase != "" {
+			signer, err = ssh.ParsePrivateKeyWithPassphrase(bytes, []byte(node.Passphrase))
+		} else {
+			signer, err = ssh.ParsePrivateKey(bytes)
+		}
+		if err == nil {
+			return ssh.PublicKeys(signer), nil, nil
+		}
+	}
+	return nil, nil, nil
 }
 
-func genSSHConfig(node *Node) *defaultClient {
-	// support multiple auth methods
-	var authMethods []ssh.AuthMethod
-
-	// Add SSH agent authentication if AgentPath is configured
-	if node.AgentPath != "" {
-		agentClient, err := connectAgent(node.AgentPath)
-		if err != nil {
-			l.Error(err)
-		} else {
-			authMethods = append(authMethods, ssh.PublicKeysCallback(agentClient.Signers))
-		}
-	} else {
-		// Add key file authentication if KeyPath is configured or default key exists
-		pemBytes, err := genPemBytes(node)
-		if err != nil {
-			l.Error(err)
-		} else {
-			for _, pemByte := range pemBytes {
-				var signer ssh.Signer
-				if node.Passphrase != "" {
-					signer, err = ssh.ParsePrivateKeyWithPassphrase(pemByte, []byte(node.Passphrase))
-				} else {
-					signer, err = ssh.ParsePrivateKey(pemByte)
-				}
-				if err != nil {
-					l.Error(err)
-				} else {
-					authMethods = append(authMethods, ssh.PublicKeys(signer))
-				}
-			}
-		}
+func setupPasswordAuth(node *Node) (ssh.AuthMethod, cleanupFunc, error) {
+	if node.Password == "" {
+		return nil, nil, nil
 	}
+	return ssh.Password(node.Password), nil, nil
+}
 
-	password := node.password()
-
-	if password != nil {
-		authMethods = append(authMethods, password)
-	}
-
-	authMethods = append(authMethods, ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
+func setupKeyboardAuth(node *Node) (ssh.AuthMethod, cleanupFunc, error) {
+	return ssh.KeyboardInteractive(func(user, instruction string, questions []string, echos []bool) ([]string, error) {
 		answers := make([]string, 0, len(questions))
 		for i, q := range questions {
 			fmt.Print(q)
@@ -158,7 +157,34 @@ func genSSHConfig(node *Node) *defaultClient {
 			}
 		}
 		return answers, nil
-	}))
+	}), nil, nil
+}
+
+func genSSHConfig(node *Node) *defaultClient {
+	// support multiple auth methods
+	// order: agent > key file > default key file > password > keyboard interactive
+	fetchers := []func(node *Node) (ssh.AuthMethod, cleanupFunc, error){
+		setupAgentAuth,
+		setupKeyFileAuth,
+		setupDefaultKeyAuth,
+		setupPasswordAuth,
+		setupKeyboardAuth,
+	}
+
+	var authMethods []ssh.AuthMethod
+	var cleanups []cleanupFunc
+	for _, fetcher := range fetchers {
+		authMethod, cleanup, err := fetcher(node)
+		if err == nil && authMethod != nil {
+			authMethods = append(authMethods, authMethod)
+		}
+		if cleanup != nil {
+			cleanups = append(cleanups, cleanup)
+		}
+		if err != nil {
+			l.Error(err)
+		}
+	}
 
 	config := &ssh.ClientConfig{
 		User:            node.user(),
@@ -173,6 +199,7 @@ func genSSHConfig(node *Node) *defaultClient {
 	return &defaultClient{
 		clientConfig: config,
 		node:         node,
+		cleanups:     cleanups,
 	}
 }
 
@@ -180,7 +207,15 @@ func NewClient(node *Node) Client {
 	return genSSHConfig(node)
 }
 
+func (c *defaultClient) close() {
+	for _, cleanup := range c.cleanups {
+		cleanup()
+	}
+}
+
 func (c *defaultClient) Login() {
+	defer c.close()
+
 	host := c.node.Host
 	port := strconv.Itoa(c.node.port())
 	jNodes := c.node.Jump
