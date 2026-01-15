@@ -22,6 +22,7 @@ type Node struct {
 	User           string           `yaml:"user"`
 	Port           int              `yaml:"port"`
 	KeyPath        string           `yaml:"keypath"`
+	AgentPath      string           `yaml:"agentpath"`
 	Passphrase     string           `yaml:"passphrase"`
 	Password       string           `yaml:"password"`
 	CallbackShells []*CallbackShell `yaml:"callback-shells"`
@@ -94,6 +95,8 @@ func LoadSshConfig() error {
 		return nil
 	}
 	f, _ := os.Open(path.Join(u.HomeDir, ".ssh/config"))
+	defer f.Close()
+
 	cfg, _ := ssh_config.Decode(f)
 	var nc []*Node
 	for _, host := range cfg.Hosts {
@@ -115,6 +118,8 @@ func LoadSshConfig() error {
 			c.Port, _ = strconv.Atoi(port)
 			keyPath, _ := cfg.Get(alias, "IdentityFile")
 			c.KeyPath, _ = homedir.Expand(keyPath)
+			agentPath, _ := cfg.Get(alias, "IdentityAgent")
+			c.AgentPath, _ = homedir.Expand(agentPath)
 			nc = append(nc, c)
 			// fmt.Println(c.Alias, c.Host, c.User, c.Port, c.KeyPath)
 		}
